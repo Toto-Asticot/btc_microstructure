@@ -39,9 +39,9 @@ def main():
     return orderbook
 
 def plot_orderbook(orderbook):
-    p = figure(title="Aggregated Orderbook BTC/USD", x_axis_label='Price', y_axis_label='Cumulative Size', plot_width=800, plot_height=400)
-    p.line(orderbook['Price'], orderbook['Buy'], legend_label='Buy', line_color='blue')
-    p.line(orderbook['Price'], orderbook['Sell'], legend_label='Sell', line_color='red')
+    p = figure(title="Aggregated Orderbook BTC/USD", x_axis_label='Price', y_axis_label='Cumulative Size', width=800, height=400)
+    p.line(x=orderbook['Price'], y=orderbook['Buy'], legend_label='Buy', line_color='blue')
+    p.line(x=orderbook['Price'], y=orderbook['Sell'], legend_label='Sell', line_color='red')
     p.legend.location = "top_left"
     p.xaxis.ticker = list(range(int(min(orderbook['Price'])), int(max(orderbook['Price'])) + 1, 25))
     st.bokeh_chart(p, use_container_width=True)
