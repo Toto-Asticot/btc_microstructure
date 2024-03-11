@@ -3,7 +3,9 @@ import requests
 import streamlit as st
 import time
 from datetime import datetime
-import matplotlib.pyplot as plt
+from bokeh.plotting import figure, show
+from bokeh.models import ColumnDataSource
+
 class Exchange:
     def __init__(self, name, api_url):
         self.name = name
@@ -21,7 +23,6 @@ class Coinbase(Exchange):
         asks = pd.DataFrame(data['asks'], columns=['Price', 'Size', '_'])
         asks['Side'] = 'sell'
         return pd.concat([bids, asks], ignore_index=True)
-        return data
 
 def main():
     # Initialize exchange objects
@@ -38,15 +39,12 @@ def main():
     return orderbook
 
 def plot_orderbook(orderbook):
-    plt.figure(figsize=(12, 6))
-    plt.title("Aggregated Orderbook BTC/USD")
-    plt.plot(orderbook['Price'], orderbook['Buy'], label='Buy')
-    plt.plot(orderbook['Price'], orderbook['Sell'], label='Sell')
-    plt.xlabel('Price')
-    plt.ylabel('Cumulative Size')
-    plt.legend()
-    plt.xticks(range(int(min(orderbook['Price'])), int(max(orderbook['Price'])) + 1, 25))
-    st.pyplot(plt)
+    p = figure(title="Aggregated Orderbook BTC/USD", x_axis_label='Price', y_axis_label='Cumulative Size', plot_width=800, plot_height=400)
+    p.line(orderbook['Price'], orderbook['Buy'], legend_label='Buy', line_color='blue')
+    p.line(orderbook['Price'], orderbook['Sell'], legend_label='Sell', line_color='red')
+    p.legend.location = "top_left"
+    p.xaxis.ticker = list(range(int(min(orderbook['Price'])), int(max(orderbook['Price'])) + 1, 25))
+    st.bokeh_chart(p, use_container_width=True)
 
 if __name__ == "__main__":
     st.title("Binance Orderbook Analysis")
@@ -69,8 +67,9 @@ if __name__ == "__main__":
         df_spread = pd.DataFrame(data_spread)
         df_volume = pd.DataFrame(data_volume)
         st.text("Plotting Orderbook")
-        # st.line_chart(df_volume)
         plot_orderbook(orderbook)
+        time.sleep(delay)
+
         # st.text("Plotting Spread")
         # plt.figure(figsize=(12, 6))
         # plt.plot(df_spread['Timestamp'], df_spread['Best_Bid'], label='Best_Bid')
@@ -81,4 +80,4 @@ if __name__ == "__main__":
         # plt.plot(df_volume['Timestamp'], df_volume['Bid'], label='Bid Volume')
         # plt.plot(df_volume['Timestamp'], df_volume['Ask'], label='Ask Volume')
         # st.pyplot(plt)
-        time.sleep(delay)
+        # time.sleep(delay)
