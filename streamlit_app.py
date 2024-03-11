@@ -48,7 +48,7 @@ def plot_orderbook(orderbook):
 
 if __name__ == "__main__":
     st.title("Binance Orderbook Analysis")
-    st.plot(binance_orderbook)
+    st.write(binance_orderbook)
     # delay = 0.1
     # price_range = 50
     # while True:
