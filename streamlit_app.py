@@ -80,4 +80,4 @@ if __name__ == "__main__":
         plt.plot(df_volume['Timestamp'], df_volume['Bid'], label='Bid Volume')
         plt.plot(df_volume['Timestamp'], df_volume['Ask'], label='Ask Volume')
         st.pyplot(plt)
-        time.sleep(delay)
+        # time.sleep(delay)
