@@ -3,7 +3,7 @@ import requests
 import streamlit as st
 import time
 from datetime import datetime
-
+import matplotlib.pyplot as plt
 class Exchange:
     def __init__(self, name, api_url):
         self.name = name
