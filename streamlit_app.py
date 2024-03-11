@@ -63,7 +63,7 @@ def main():
 
     # Update interval in seconds
     update_interval = 10
-    while True:
+    for i in range(10):
         time.sleep(update_interval)
         st.write("Fetching updated orderbook data...")
         binance_orderbook = binance.fetch_orderbook()
