@@ -15,35 +15,19 @@ class Exchange:
 class Binance(Exchange):
     def fetch_orderbook(self):
         response = requests.get(self.api_url + 'api/v3/depth?symbol=BTCUSDT&limit=1000')
-        if response.status_code != 200:
-            print("Error: Failed to fetch order book data from Binance API.")
-            return None
-        
         data = response.json()
-        print(data)  # Print response data for debugging
-        
-        if 'bids' not in data or 'asks' not in data:
-            print("Error: 'bids' or 'asks' key not found in response data.")
-            return None
-        
         bids = pd.DataFrame(data['bids'], columns=['Price', 'Size'])
         bids['Side'] = 'buy'
         asks = pd.DataFrame(data['asks'], columns=['Price', 'Size'])
         asks['Side'] = 'sell'
         return pd.concat([bids, asks], ignore_index=True)
 
-
-
 def main():
     # Initialize exchange objects
     binance = Binance('Binance', 'https://api.binance.com/')
-
     # Fetch orderbook data
     binance_orderbook = binance.fetch_orderbook()
-
     # Select only the relevant columns for each DataFrame
-    binance_orderbook = binance_orderbook[['Price', 'Size', 'Side']]
-
     # Concatenate the modified DataFrames
     orderbook = binance_orderbook.sort_values(by=['Price'], ascending=False).reset_index(drop=True)
     orderbook['Price'] = orderbook['Price'].astype(float)
