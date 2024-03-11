@@ -52,7 +52,7 @@ if __name__ == "__main__":
     st.title("Binance Orderbook Analysis")
     delay = 1
     price_range = 50
-    while True:
+    for i in range(1):
         orderbook = main()
         orderbook['Buy'] = orderbook[orderbook['Side'] == 'buy']['Size'].cumsum()
         orderbook['Sell'] = orderbook[orderbook['Side'] == 'sell']['Size'][::-1].cumsum()
