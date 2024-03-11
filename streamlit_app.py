@@ -12,20 +12,20 @@ class Exchange:
     def fetch_orderbook(self):
         raise NotImplementedError()
 
-class Binance(Exchange):
+class Coinbase(Exchange):
     def fetch_orderbook(self):
-        response = requests.get(self.api_url + 'api/v3/depth?symbol=BTCUSDT&limit=1000')
+        response = requests.get(self.api_url + 'products/BTC-USD/book?level=2')
         data = response.json()
-        # bids = pd.DataFrame(data['bids'], columns=['Price', 'Size'])
+        # bids = pd.DataFrame(data['bids'], columns=['Price', 'Size', '_'])
         # bids['Side'] = 'buy'
-        # asks = pd.DataFrame(data['asks'], columns=['Price', 'Size'])
+        # asks = pd.DataFrame(data['asks'], columns=['Price', 'Size', '_'])
         # asks['Side'] = 'sell'
         # return pd.concat([bids, asks], ignore_index=True)
         return data
 
 def main():
     # Initialize exchange objects
-    binance = Binance('Binance', 'https://api.binance.com/')
+    binance = Coinbase('Coinbase', 'https://api.pro.coinbase.com/')
     # Fetch orderbook data
     binance_orderbook = binance.fetch_orderbook()
     # Select only the relevant columns for each DataFrame
