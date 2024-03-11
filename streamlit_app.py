@@ -50,7 +50,7 @@ def plot_orderbook(orderbook):
 
 if __name__ == "__main__":
     st.title("Binance Orderbook Analysis")
-    delay = 0.1
+    delay = 1
     price_range = 50
     while True:
         orderbook = main()
