@@ -62,7 +62,7 @@ def main():
     st.write(f"Total Sell Size: {binance_orderbook['Sell'].iloc[-1]:.2f}")
 
     # Update interval in seconds
-    update_interval = 20
+    update_interval = 60
     while True:
         time.sleep(update_interval)
         st.write("Fetching updated orderbook data...")
