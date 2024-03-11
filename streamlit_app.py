@@ -5,7 +5,6 @@ import time
 import subprocess
 import numpy as np
 from datetime import datetime
-from IPython.display import clear_output
 
 class Exchange:
     def __init__(self, name, api_url):
@@ -97,43 +96,40 @@ while True:
     volume = pd.concat([volume, df_volume], ignore_index=True)
 
     # Clear the previous plot
-    clear_output(wait=True)
-    plt.figure(figsize=(12,6))
+    plt.figure(figsize=(12, 6))
     plt.title("Aggregated Orderbook BTC/USD")
     # Plot the updated cumulative sums for buy and sell sides
     plt.plot(orderbook['Price'], orderbook['Buy'], label='Buy')
     plt.plot(orderbook['Price'], orderbook['Sell'], label='Sell')
     
-    
     plt.xlabel('Price')
     plt.ylabel('Cumulative Size')
     plt.legend()
-
+    
     # Set the tick interval for the price axis to 25 dollars
     plt.xticks(range(int(min(orderbook['Price'])), int(max(orderbook['Price'])) + 1, 25))
-
+    
     # Add text to display current price and buy/sell analysis within the price range
     plt.text(0.9, 0.8, f'Current Price: {current_price:.2f}', transform=plt.gca().transAxes, ha='right')
     plt.text(0.9, 0.75, f'Best Bid: {best_bid:.2f}', transform=plt.gca().transAxes, ha='right')
     plt.text(0.9, 0.7, f'Best Ask: {best_ask:.2f}', transform=plt.gca().transAxes, ha='right')
     plt.text(0.9, 0.65, f'Buy Size: {buy_size:.2f}', transform=plt.gca().transAxes, ha='right')
     plt.text(0.9, 0.6, f'Sell Size: {sell_size:.2f}', transform=plt.gca().transAxes, ha='right')
-
-    plt.draw()
     
-#     plt.pause(0.01)  # Add a small delay to allow the plot to update
-    plt.figure(figsize=(12,6))
+    st.pyplot(plt)  # Display the plot in Streamlit
+    
+    # Add a small delay to allow the plot to update
+    st.text("Plotting Spread")
+    plt.figure(figsize=(12, 6))
     plt.plot(spread['Timestamp'], spread['Best_Bid'], label='Best_Bid')
-    plt.plot(spread['Timestamp'], spread['Best_Ask'], label='Best_Bid')
-
-    plt.show()
-    plt.pause(0.01)  # Add a small delay to allow the plot to update
-
-    plt.figure(figsize=(12,6))
+    plt.plot(spread['Timestamp'], spread['Best_Ask'], label='Best_Ask')
+    st.pyplot(plt)
+    
+    st.text("Plotting Volume")
+    plt.figure(figsize=(12, 6))
     plt.plot(volume['Timestamp'], volume['Bid'], label='Bid Volume')
     plt.plot(volume['Timestamp'], volume['Ask'], label='Ask Volume')
-
-    plt.show()
+    st.pyplot(plt)
     plt.pause(0.01)  # Add a small delay to allow the plot to update
 
     # Wait for the specified delay before the next iteration
