@@ -34,7 +34,7 @@ def main():
     # orderbook['Price'] = orderbook['Price'].astype(float)
     # orderbook['Size'] = orderbook['Size'].astype(float)
 
-    return orderbook
+    return binance_orderbook
 
 def plot_orderbook(orderbook):
     plt.figure(figsize=(12, 6))
