@@ -1,40 +1,88 @@
-import altair as alt
-import numpy as np
-import pandas as pd
 import streamlit as st
+import pandas as pd
+import requests
+import matplotlib.pyplot as plt
+from datetime import datetime
+import time
 
-"""
-# Welcome to Streamlit!
+class Exchange:
+    def __init__(self, name, api_url):
+        self.name = name
+        self.api_url = api_url
 
-Edit `/streamlit_app.py` to customize this app to your heart's desire :heart:.
-If you have any questions, checkout our [documentation](https://docs.streamlit.io) and [community
-forums](https://discuss.streamlit.io).
+    def fetch_orderbook(self):
+        raise NotImplementedError()
 
-In the meantime, below is an example of what you can do with just a few lines of code:
-"""
+class Binance(Exchange):
+    def fetch_orderbook(self):
+        response = requests.get(self.api_url + 'api/v3/depth?symbol=BTCUSDT&limit=1000')
+        data = response.json()
+        bids = pd.DataFrame(data['bids'], columns=['Price', 'Size'])
+        bids['Side'] = 'buy'
+        asks = pd.DataFrame(data['asks'], columns=['Price', 'Size'])
+        asks['Side'] = 'sell'
+        return pd.concat([bids, asks], ignore_index=True)
 
-num_points = st.slider("Number of points in spiral", 1, 10000, 1100)
-num_turns = st.slider("Number of turns in spiral", 1, 300, 31)
+def main():
+    st.title("Real-Time Orderbook Analysis")
 
-indices = np.linspace(0, 1, num_points)
-theta = 2 * np.pi * num_turns * indices
-radius = indices
+    binance = Binance('Binance', 'https://api.binance.com/')
+    
+    st.write("Fetching orderbook data from Binance API...")
+    binance_orderbook = binance.fetch_orderbook()
 
-x = radius * np.cos(theta)
-y = radius * np.sin(theta)
+    st.write("Orderbook Data:")
+    st.write(binance_orderbook)
 
-df = pd.DataFrame({
-    "x": x,
-    "y": y,
-    "idx": indices,
-    "rand": np.random.randn(num_points),
-})
+    # Convert 'Price' and 'Size' columns to float
+    binance_orderbook['Price'] = binance_orderbook['Price'].astype(float)
+    binance_orderbook['Size'] = binance_orderbook['Size'].astype(float)
 
-st.altair_chart(alt.Chart(df, height=700, width=700)
-    .mark_point(filled=True)
-    .encode(
-        x=alt.X("x", axis=None),
-        y=alt.Y("y", axis=None),
-        color=alt.Color("idx", legend=None, scale=alt.Scale()),
-        size=alt.Size("rand", legend=None, scale=alt.Scale(range=[1, 150])),
-    ))
+    # Calculate cumulative sums for buy and sell sides
+    binance_orderbook['Buy'] = binance_orderbook[binance_orderbook['Side'] == 'buy']['Size'].cumsum()
+    binance_orderbook['Sell'] = binance_orderbook[binance_orderbook['Side'] == 'sell']['Size'][::-1].cumsum()
+
+    # Get current timestamp
+    current_timestamp = datetime.now()
+
+    # Plot the orderbook
+    plt.figure(figsize=(12, 6))
+    plt.plot(binance_orderbook['Price'], binance_orderbook['Buy'], label='Buy')
+    plt.plot(binance_orderbook['Price'], binance_orderbook['Sell'], label='Sell')
+    plt.xlabel('Price')
+    plt.ylabel('Cumulative Size')
+    plt.title('Aggregated Orderbook BTC/USD')
+    plt.legend()
+    st.pyplot(plt)
+
+    # Display current price and orderbook statistics
+    current_price = binance_orderbook['Price'].iloc[0]  # Assuming 'Price' is sorted
+    st.write(f"Current Price: {current_price:.2f}")
+    st.write(f"Total Buy Size: {binance_orderbook['Buy'].iloc[-1]:.2f}")
+    st.write(f"Total Sell Size: {binance_orderbook['Sell'].iloc[-1]:.2f}")
+
+    # Update interval in seconds
+    update_interval = 20
+    while True:
+        time.sleep(update_interval)
+        st.write("Fetching updated orderbook data...")
+        binance_orderbook = binance.fetch_orderbook()
+
+        # Update the plot
+        plt.clf()
+        plt.plot(binance_orderbook['Price'], binance_orderbook['Buy'], label='Buy')
+        plt.plot(binance_orderbook['Price'], binance_orderbook['Sell'], label='Sell')
+        plt.xlabel('Price')
+        plt.ylabel('Cumulative Size')
+        plt.title('Aggregated Orderbook BTC/USD')
+        plt.legend()
+        st.pyplot(plt)
+
+        # Update current price and orderbook statistics
+        current_price = binance_orderbook['Price'].iloc[0]  # Assuming 'Price' is sorted
+        st.write(f"Current Price: {current_price:.2f}")
+        st.write(f"Total Buy Size: {binance_orderbook['Buy'].iloc[-1]:.2f}")
+        st.write(f"Total Sell Size: {binance_orderbook['Sell'].iloc[-1]:.2f}")
+
+if __name__ == "__main__":
+    main()
