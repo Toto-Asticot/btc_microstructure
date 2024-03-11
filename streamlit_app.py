@@ -1,9 +1,13 @@
-import streamlit as st
 import pandas as pd
 import requests
 import matplotlib.pyplot as plt
-from datetime import datetime
 import time
+import subprocess
+from PyQt5 import QtWidgets, QtCore
+from threading import Thread
+from IPython.display import clear_output
+import numpy as np
+from datetime import datetime
 
 class Exchange:
     def __init__(self, name, api_url):
@@ -13,6 +17,7 @@ class Exchange:
     def fetch_orderbook(self):
         raise NotImplementedError()
 
+    
 class Binance(Exchange):
     def fetch_orderbook(self):
         response = requests.get(self.api_url + 'api/v3/depth?symbol=BTCUSDT&limit=1000')
@@ -24,65 +29,114 @@ class Binance(Exchange):
         return pd.concat([bids, asks], ignore_index=True)
 
 def main():
-    st.title("Real-Time Orderbook Analysis")
-
+    # Initialize exchange objects
     binance = Binance('Binance', 'https://api.binance.com/')
-    
-    st.write("Fetching orderbook data from Binance API...")
+
+    # Fetch orderbook data
     binance_orderbook = binance.fetch_orderbook()
 
-    st.write("Orderbook Data:")
-    st.write(binance_orderbook)
+    # Select only the relevant columns for each DataFrame
 
-    # Convert 'Price' and 'Size' columns to float
-    binance_orderbook['Price'] = binance_orderbook['Price'].astype(float)
-    binance_orderbook['Size'] = binance_orderbook['Size'].astype(float)
+    binance_orderbook = binance_orderbook[['Price', 'Size', 'Side']]
 
+    # Concatenate the modified DataFrames
+    orderbook=binance_orderbook
+
+    # You may want to sort the orderbook based on price
+    orderbook = orderbook.sort_values(by=['Price'], ascending=False).reset_index(drop=True)
+    
+    orderbook['Price']=orderbook['Price'].astype(float)
+    orderbook['Size']=orderbook['Size'].astype(float)
+
+    # Save the orderbook to a csv file
+    return orderbook
+
+# Set the time delay in seconds between each iteration
+delay = 0.1
+price_range = 50  # Price range for analysis
+spread=pd.DataFrame(columns=['Best_Bid','Best_Ask',"Timestamp"])
+volume=pd.DataFrame(columns=['Bid','Ask',"Timestamp"])
+
+while True:
+    # Execute the main.py script to update the CSV data
+    orderbook=main()
     # Calculate cumulative sums for buy and sell sides
-    binance_orderbook['Buy'] = binance_orderbook[binance_orderbook['Side'] == 'buy']['Size'].cumsum()
-    binance_orderbook['Sell'] = binance_orderbook[binance_orderbook['Side'] == 'sell']['Size'][::-1].cumsum()
+    orderbook['Buy'] = orderbook[orderbook['Side'] == 'buy']['Size'].cumsum()
+    orderbook['Sell'] = orderbook[orderbook['Side'] == 'sell']['Size'][::-1].cumsum()
 
-    # Get current timestamp
+    # Get the current BTC price from binance
+    response = requests.get('https://api.binance.com/api/v3/ticker/price', params={'symbol': 'BTCUSDT'})
+    current_price = float(response.json()['price'])
+    
+    # Analyze the buy and sell sides within the price range
+    price_min = current_price - price_range
+    price_max = current_price + price_range
+    buy_size = orderbook[(orderbook['Price'] >= price_min) & (orderbook['Price'] <= price_max) & (orderbook['Side'] == 'buy')]['Size'].sum()
+    sell_size = orderbook[(orderbook['Price'] >= price_min) & (orderbook['Price'] <= price_max) & (orderbook['Side'] == 'sell')]['Size'].sum()
+
+    #Calculate best ask and best bid
+    
+    best_ask=orderbook[pd.notna(orderbook["Sell"])]['Price'].min()
+    best_bid=orderbook[pd.notna(orderbook["Buy"])]['Price'].max()
+    bid_vol=buy_size
+    ask_vol=sell_size
+    
     current_timestamp = datetime.now()
+    # spread = spread.append({'Best_Bid': best_bid, 'Best_Ask': best_ask, 'Timestamp': current_timestamp}, ignore_index=True)
+    
+    # volume = volume.append({'Bid': bid_vol, 'Ask': ask_vol, 'Timestamp': current_timestamp}, ignore_index=True)
 
-    # Plot the orderbook
-    plt.figure(figsize=(12, 6))
-    plt.plot(binance_orderbook['Price'], binance_orderbook['Buy'], label='Buy')
-    plt.plot(binance_orderbook['Price'], binance_orderbook['Sell'], label='Sell')
+    # Assuming spread and volume are your DataFrames
+    data_spread = {'Best_Bid': [best_bid], 'Best_Ask': [best_ask], 'Timestamp': [current_timestamp]}
+    data_volume = {'Bid': [bid_vol], 'Ask': [ask_vol], 'Timestamp': [current_timestamp]}
+    
+    # Convert dictionaries to DataFrames
+    df_spread = pd.DataFrame(data_spread)
+    df_volume = pd.DataFrame(data_volume)
+    
+    # Concatenate with existing DataFrames
+    spread = pd.concat([spread, df_spread], ignore_index=True)
+    volume = pd.concat([volume, df_volume], ignore_index=True)
+
+    # Clear the previous plot
+    clear_output(wait=True)
+    plt.figure(figsize=(12,6))
+    plt.title("Aggregated Orderbook BTC/USD")
+    # Plot the updated cumulative sums for buy and sell sides
+    plt.plot(orderbook['Price'], orderbook['Buy'], label='Buy')
+    plt.plot(orderbook['Price'], orderbook['Sell'], label='Sell')
+    
+    
     plt.xlabel('Price')
     plt.ylabel('Cumulative Size')
-    plt.title('Aggregated Orderbook BTC/USD')
     plt.legend()
-    st.pyplot(plt)
 
-    # Display current price and orderbook statistics
-    current_price = binance_orderbook['Price'].iloc[0]  # Assuming 'Price' is sorted
-    st.write(f"Current Price: {current_price:.2f}")
-    st.write(f"Total Buy Size: {binance_orderbook['Buy'].iloc[-1]:.2f}")
-    st.write(f"Total Sell Size: {binance_orderbook['Sell'].iloc[-1]:.2f}")
+    # Set the tick interval for the price axis to 25 dollars
+    plt.xticks(range(int(min(orderbook['Price'])), int(max(orderbook['Price'])) + 1, 25))
 
-    # Update interval in seconds
-    update_interval = 10
-    for i in range(10):
-        time.sleep(update_interval)
-        st.write("Fetching updated orderbook data...")
-        binance_orderbook = binance.fetch_orderbook()
+    # Add text to display current price and buy/sell analysis within the price range
+    plt.text(0.9, 0.8, f'Current Price: {current_price:.2f}', transform=plt.gca().transAxes, ha='right')
+    plt.text(0.9, 0.75, f'Best Bid: {best_bid:.2f}', transform=plt.gca().transAxes, ha='right')
+    plt.text(0.9, 0.7, f'Best Ask: {best_ask:.2f}', transform=plt.gca().transAxes, ha='right')
+    plt.text(0.9, 0.65, f'Buy Size: {buy_size:.2f}', transform=plt.gca().transAxes, ha='right')
+    plt.text(0.9, 0.6, f'Sell Size: {sell_size:.2f}', transform=plt.gca().transAxes, ha='right')
 
-        # Update the plot
-        plt.clf()
-        plt.plot(binance_orderbook['Price'], binance_orderbook['Buy'], label='Buy')
-        plt.plot(binance_orderbook['Price'], binance_orderbook['Sell'], label='Sell')
-        plt.xlabel('Price')
-        plt.ylabel('Cumulative Size')
-        plt.title('Aggregated Orderbook BTC/USD')
-        plt.legend()
-        st.pyplot(plt)
+    plt.draw()
+    
+#     plt.pause(0.01)  # Add a small delay to allow the plot to update
+    plt.figure(figsize=(12,6))
+    plt.plot(spread['Timestamp'], spread['Best_Bid'], label='Best_Bid')
+    plt.plot(spread['Timestamp'], spread['Best_Ask'], label='Best_Bid')
 
-        # Update current price and orderbook statistics
-        current_price = binance_orderbook['Price'].iloc[0]  # Assuming 'Price' is sorted
-        st.write(f"Current Price: {current_price:.2f}")
-        st.write(f"Total Buy Size: {binance_orderbook['Buy'].iloc[-1]:.2f}")
-        st.write(f"Total Sell Size: {binance_orderbook['Sell'].iloc[-1]:.2f}")
+    plt.show()
+    plt.pause(0.01)  # Add a small delay to allow the plot to update
 
-if __name__ == "__main__":
-    main()
+    plt.figure(figsize=(12,6))
+    plt.plot(volume['Timestamp'], volume['Bid'], label='Bid Volume')
+    plt.plot(volume['Timestamp'], volume['Ask'], label='Ask Volume')
+
+    plt.show()
+    plt.pause(0.01)  # Add a small delay to allow the plot to update
+
+    # Wait for the specified delay before the next iteration
+    time.sleep(delay)
