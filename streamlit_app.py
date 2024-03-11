@@ -16,11 +16,11 @@ class Coinbase(Exchange):
     def fetch_orderbook(self):
         response = requests.get(self.api_url + 'products/BTC-USD/book?level=2')
         data = response.json()
-        # bids = pd.DataFrame(data['bids'], columns=['Price', 'Size', '_'])
-        # bids['Side'] = 'buy'
-        # asks = pd.DataFrame(data['asks'], columns=['Price', 'Size', '_'])
-        # asks['Side'] = 'sell'
-        # return pd.concat([bids, asks], ignore_index=True)
+        bids = pd.DataFrame(data['bids'], columns=['Price', 'Size', '_'])
+        bids['Side'] = 'buy'
+        asks = pd.DataFrame(data['asks'], columns=['Price', 'Size', '_'])
+        asks['Side'] = 'sell'
+        return pd.concat([bids, asks], ignore_index=True)
         return data
 
 def main():
@@ -30,11 +30,11 @@ def main():
     binance_orderbook = binance.fetch_orderbook()
     # Select only the relevant columns for each DataFrame
     # Concatenate the modified DataFrames
-    # orderbook = binance_orderbook.sort_values(by=['Price'], ascending=False).reset_index(drop=True)
-    # orderbook['Price'] = orderbook['Price'].astype(float)
-    # orderbook['Size'] = orderbook['Size'].astype(float)
+    orderbook = binance_orderbook.sort_values(by=['Price'], ascending=False).reset_index(drop=True)
+    orderbook['Price'] = orderbook['Price'].astype(float)
+    orderbook['Size'] = orderbook['Size'].astype(float)
 
-    return binance_orderbook
+    return orderbook
 
 def plot_orderbook(orderbook):
     plt.figure(figsize=(12, 6))
