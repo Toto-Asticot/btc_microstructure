@@ -1,5 +1,4 @@
-altair
-pandas
 streamlit
+pandas
 requests
-schedule
+matplotlib
