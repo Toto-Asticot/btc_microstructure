@@ -50,9 +50,9 @@ def plot_orderbook(orderbook):
 
 if __name__ == "__main__":
     st.title("Binance Orderbook Analysis")
-    delay = 1
+    delay = 0.2
     price_range = 50
-    for i in range(1):
+    while True:
         orderbook = main()
         orderbook['Buy'] = orderbook[orderbook['Side'] == 'buy']['Size'].cumsum()
         orderbook['Sell'] = orderbook[orderbook['Side'] == 'sell']['Size'][::-1].cumsum()
