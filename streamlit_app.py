@@ -56,7 +56,7 @@ if __name__ == "__main__":
         orderbook = main()
         orderbook['Buy'] = orderbook[orderbook['Side'] == 'buy']['Size'].cumsum()
         orderbook['Sell'] = orderbook[orderbook['Side'] == 'sell']['Size'][::-1].cumsum()
-        current_price = float(requests.get('https://api.binance.com/api/v3/ticker/price', params={'symbol': 'BTCUSDT'}).json()['price'])
+        current_price ==float(requests.get("https://api.coinbase.com/v2/prices/BTC-USD/spot").json()['data']['amount'])
         price_min = current_price - price_range
         price_max = current_price + price_range
         buy_size = orderbook[(orderbook['Price'] >= price_min) & (orderbook['Price'] <= price_max) & (orderbook['Side'] == 'buy')]['Size'].sum()
