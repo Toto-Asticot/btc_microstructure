@@ -16,11 +16,12 @@ class Binance(Exchange):
     def fetch_orderbook(self):
         response = requests.get(self.api_url + 'api/v3/depth?symbol=BTCUSDT&limit=1000')
         data = response.json()
-        bids = pd.DataFrame(data['bids'], columns=['Price', 'Size'])
-        bids['Side'] = 'buy'
-        asks = pd.DataFrame(data['asks'], columns=['Price', 'Size'])
-        asks['Side'] = 'sell'
-        return pd.concat([bids, asks], ignore_index=True)
+        # bids = pd.DataFrame(data['bids'], columns=['Price', 'Size'])
+        # bids['Side'] = 'buy'
+        # asks = pd.DataFrame(data['asks'], columns=['Price', 'Size'])
+        # asks['Side'] = 'sell'
+        # return pd.concat([bids, asks], ignore_index=True)
+        return data
 
 def main():
     # Initialize exchange objects
