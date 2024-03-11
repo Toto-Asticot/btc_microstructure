@@ -3,11 +3,9 @@ import requests
 import matplotlib.pyplot as plt
 import time
 import subprocess
-from PyQt5 import QtWidgets, QtCore
-from threading import Thread
-from IPython.display import clear_output
 import numpy as np
 from datetime import datetime
+from IPython.display import clear_output
 
 class Exchange:
     def __init__(self, name, api_url):
