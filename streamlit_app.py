@@ -69,6 +69,7 @@ if __name__ == "__main__":
         df_spread = pd.DataFrame(data_spread)
         df_volume = pd.DataFrame(data_volume)
         st.text("Plotting Orderbook")
+        st.write(df_volume)
         plot_orderbook(orderbook)
         st.text("Plotting Spread")
         plt.figure(figsize=(12, 6))
